@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <script>
+      // Prevent forms from submitting by default.
+      function preventFormSubmit() {
+        var forms = document.querySelectorAll('form');
+        for (var i = 0; i < forms.length; i++) {
+          forms[i].addEventListener('submit', function(event) {
+            event.preventDefault();
+          });
+        }
+      }
+      window.addEventListener('load', preventFormSubmit);
+      
+      // Load the currently selected section titles.
+      window.addEventListener('load', showCurrentSectionTitles);
+      function getCurrentSectionTitlesSuccessHandler(o) {
+        const nameItem = document.querySelector('div#currentNameSection #'+o.nameSection)
+        if(nameItem) {
+          nameItem.checked = true
+        }
+        const categoryItem = document.querySelector('div#currentCategorySection #'+o.categorySection)
+        if(categoryItem) {
+          categoryItem.checked = true
+        }
+        const signaturesItem = document.querySelector('div#currentSignaturesSection #'+o.signaturesSection)
+        if(signaturesItem) {
+          signaturesItem.checked = true
+        }
+      }
+      function showCurrentSectionTitles() {
+        google.script.run
+          .withSuccessHandler(getCurrentSectionTitlesSuccessHandler)
+          .getCurrentSectionTitles();
+      }
+
+      // Handle user requests.
+      function handleFormSubmit(formObject) {
+        google.script.run.setCurrentSectionTitles(formObject);
+        google.script.run.addSignaturesToForm();
+      }
+      function createSignaturesSection() {
+        google.script.run.createSignaturesSection();
+      }
+    </script>
+  </head>
+  <body style="font-family: 'Google Sans', Roboto, Arial, sans-serif">
+    <form id="sections" onsubmit="handleFormSubmit(this)">
+    <div id="currentNameSection">
+      <p>Which section asks participants for their name?</p>
+        <? const items = FormApp.getActiveForm().getItems(FormApp.ItemType.TEXT); ?>
+        <? for (let i = 0; i < items.length; i++) { ?>
+          <? const title = items[i].getTitle() ?>
+        <input type="radio" id="<?= title ?>" name="nameSection" value="<?= title ?>" />
+        <label for="<?= title ?>"><?= title ?></label><br>
+        <? } ?>
+    </div>
+    <div id="currentCategorySection">
+      <p>Which section asks participants for their category/affiliation?</p>
+      <? for (let i = 0; i < items.length; i++) { ?>
+        <? const title = items[i].getTitle() ?>
+        <input type="radio" id="<?= title ?>" name="categorySection" value="<?= title ?>" />
+        <label for="<?= title ?>"><?= title ?></label><br>
+      <? } ?>
+      <input type="radio" id="none" name="categorySection" value="none" />
+      <label for="none">None (do not group signatures by category)</label><br>
+    </div>
+    <div id="currentSignaturesSection">
+      <p>Which section should show the full list of signatures?</p>
+      <? const sectionHeaderItems = FormApp.getActiveForm().getItems(FormApp.ItemType.SECTION_HEADER); ?>
+      <? if (sectionHeaderItems.length === 0) { ?>
+        <p>No valid sections were found.<br>
+          <a style="text-decoration: underline" onclick="createSignaturesSection()">Click here to create one.</a>
+        </p>
+      <? } else { ?>
+        <? for (let i = 0; i < sectionHeaderItems.length; i++) { ?>
+          <? const title = sectionHeaderItems[i].getTitle() ?>
+          <input type="radio" id="<?= title ?>" name="signaturesSection" value="<?= title ?>" />
+          <label for="<?= title ?>"><?= title ?></label><br>
+        <? } ?>
+      <? } ?>
+    </div>
+    <br>
+    <input type="submit" value="Submit choices and update form" />
+    </form>
+    <br>
+    <form id="refresh" onsubmit="showCurrentSectionTitles()">
+      <input type="submit" value="Refresh choices" />
+    </form>
+    <div id="output"></div>
+ </body>
+</html>
